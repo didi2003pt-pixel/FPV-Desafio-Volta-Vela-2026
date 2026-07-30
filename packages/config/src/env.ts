@@ -32,6 +32,7 @@ const schema = z.object({
   SAILTI_BASE_URL: z.string().url(),
   SAILTI_RACES_URL: z.string().url(),
   SAILTI_RESULTS_URL: z.string().url(),
+  CRON_SECRET: z.string().min(24).optional(),
 });
 
 export type AppEnv = z.infer<typeof schema>;

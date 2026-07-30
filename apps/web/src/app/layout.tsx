@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: { default: "Desafio Volta à Vela", template: "%s | Desafio Volta à Vela" },
-  description: "Fundação técnica do Desafio Volta à Vela 2026.",
+  description: "Jogo de previsões da Volta a Portugal à Vela 2026.",
   robots: { index: false, follow: false },
 };
 

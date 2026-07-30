@@ -77,6 +77,30 @@ enum StageStatus {
   ARCHIVED
 }
 
+enum PredictionMarketStatus {
+  DRAFT
+  OPEN
+  CLOSED
+  CANCELLED
+  ARCHIVED
+}
+
+enum SpecialQuestionType {
+  SINGLE_CHOICE
+  TRUE_FALSE
+  EXACT_NUMBER
+  NUMERIC_RANGE
+  TIME_DIFFERENCE
+  TIME_RANGE
+}
+
+enum PredictionStatus {
+  DRAFT
+  SUBMITTED
+  LOCKED
+  VOID
+}
+
 enum ConsentType {
   TERMS
   PRIVACY
@@ -111,6 +135,8 @@ model User {
   passwordResetTokens PasswordResetToken[]
   consents            Consent[]
   memberships         CommunityMembership[]
+  predictions         Prediction[]
+  predictionRevisions PredictionRevision[] @relation("PredictionRevisionActor")
   auditLogs           AuditLog[] @relation("AuditActor")
 
   @@map("users")
@@ -290,6 +316,7 @@ model RaceClass {
   children  RaceClass[] @relation("ClassHierarchy")
   boats     Boat[]
   stageClasses StageClass[]
+  predictionMarkets PredictionMarket[]
   createdAt DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime    @updatedAt @map("updated_at") @db.Timestamptz(6)
 
@@ -312,6 +339,8 @@ model Boat {
   certificates       BoatCertificate[]
   externalIdentifiers BoatExternalIdentifier[]
   stageBoats         StageBoat[]
+  predictionPodiums  PredictionPodium[]
+  surprisePredictions Prediction[] @relation("PredictionSurpriseBoat")
   createdAt          DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt          DateTime    @updatedAt @map("updated_at") @db.Timestamptz(6)
   deletedAt          DateTime?   @map("deleted_at") @db.Timestamptz(6)
@@ -411,6 +440,7 @@ model Stage {
   sponsor             Sponsor?    @relation(fields: [sponsorId], references: [id], onDelete: SetNull)
   stageClasses        StageClass[]
   stageBoats          StageBoat[]
+  predictionMarkets   PredictionMarket[]
   createdAt           DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt           DateTime    @updatedAt @map("updated_at") @db.Timestamptz(6)
 
@@ -444,6 +474,115 @@ model StageBoat {
   @@unique([stageId, boatId])
   @@index([boatId])
   @@map("stage_boats")
+}
+
+model PredictionMarket {
+  id                     String                 @id @default(uuid()) @db.Uuid
+  stageId                String                 @map("stage_id") @db.Uuid
+  classId                String                 @map("class_id") @db.Uuid
+  code                   String                 @unique @db.VarChar(180)
+  status                 PredictionMarketStatus @default(DRAFT)
+  opensAt                DateTime?              @map("opens_at") @db.Timestamptz(6)
+  closesAt               DateTime?              @map("closes_at") @db.Timestamptz(6)
+  allowSurpriseInPodium  Boolean                @default(false) @map("allow_surprise_in_podium")
+  maxPodiumPosition      Int                    @default(3) @map("max_podium_position")
+  stage                  Stage                  @relation(fields: [stageId], references: [id], onDelete: Cascade)
+  class                  RaceClass              @relation(fields: [classId], references: [id], onDelete: Restrict)
+  specialQuestion        SpecialQuestion?
+  predictions            Prediction[]
+  createdAt              DateTime               @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt              DateTime               @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([stageId, classId])
+  @@index([status, opensAt, closesAt])
+  @@index([classId])
+  @@map("prediction_markets")
+}
+
+model SpecialQuestion {
+  id            String              @id @default(uuid()) @db.Uuid
+  marketId      String              @unique @map("market_id") @db.Uuid
+  type          SpecialQuestionType
+  prompt        String              @db.VarChar(500)
+  helpText      String?             @map("help_text") @db.VarChar(500)
+  points        Int                 @default(50)
+  active        Boolean             @default(false)
+  correctAnswer Json?               @map("correct_answer")
+  tolerance     Json?
+  market        PredictionMarket    @relation(fields: [marketId], references: [id], onDelete: Cascade)
+  options       SpecialQuestionOption[]
+  createdAt     DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime            @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("special_questions")
+}
+
+model SpecialQuestionOption {
+  id         String          @id @default(uuid()) @db.Uuid
+  questionId String          @map("question_id") @db.Uuid
+  value      String          @db.VarChar(100)
+  label      String          @db.VarChar(200)
+  sortOrder  Int             @default(0) @map("sort_order")
+  active     Boolean         @default(true)
+  question   SpecialQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  createdAt  DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@unique([questionId, value])
+  @@index([questionId, sortOrder])
+  @@map("special_question_options")
+}
+
+model Prediction {
+  id              String           @id @default(uuid()) @db.Uuid
+  userId          String           @map("user_id") @db.Uuid
+  marketId        String           @map("market_id") @db.Uuid
+  status          PredictionStatus @default(DRAFT)
+  surpriseBoatId  String?          @map("surprise_boat_id") @db.Uuid
+  specialAnswer   Json?            @map("special_answer")
+  submittedAt     DateTime?        @map("submitted_at") @db.Timestamptz(6)
+  lockedAt        DateTime?        @map("locked_at") @db.Timestamptz(6)
+  createdAt       DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  market          PredictionMarket @relation(fields: [marketId], references: [id], onDelete: Cascade)
+  surpriseBoat    Boat?            @relation("PredictionSurpriseBoat", fields: [surpriseBoatId], references: [id], onDelete: Restrict)
+  podium          PredictionPodium[]
+  revisions       PredictionRevision[]
+
+  @@unique([userId, marketId])
+  @@index([marketId, status, submittedAt])
+  @@index([surpriseBoatId])
+  @@map("predictions")
+}
+
+model PredictionPodium {
+  predictionId String     @map("prediction_id") @db.Uuid
+  position     Int
+  boatId       String     @map("boat_id") @db.Uuid
+  prediction   Prediction @relation(fields: [predictionId], references: [id], onDelete: Cascade)
+  boat         Boat       @relation(fields: [boatId], references: [id], onDelete: Restrict)
+  createdAt    DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@id([predictionId, position])
+  @@unique([predictionId, boatId])
+  @@index([boatId])
+  @@map("prediction_podium")
+}
+
+model PredictionRevision {
+  id             String      @id @default(uuid()) @db.Uuid
+  predictionId   String      @map("prediction_id") @db.Uuid
+  actorUserId    String?     @map("actor_user_id") @db.Uuid
+  reason         String      @db.VarChar(100)
+  beforeSnapshot Json?       @map("before_snapshot")
+  afterSnapshot  Json        @map("after_snapshot")
+  createdAt      DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+  prediction     Prediction  @relation(fields: [predictionId], references: [id], onDelete: Cascade)
+  actor          User?       @relation("PredictionRevisionActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([predictionId, createdAt])
+  @@index([actorUserId])
+  @@map("prediction_revisions")
 }
 
 model Sponsor {

@@ -87,7 +87,7 @@ export async function registerAction(_: FormState, formData: FormData): Promise<
   }
 
   await createSession(user.id);
-  redirect("/admin");
+  redirect("/jogar");
 }
 
 export async function loginAction(_: FormState, formData: FormData): Promise<FormState> {
@@ -111,7 +111,7 @@ export async function loginAction(_: FormState, formData: FormData): Promise<For
   await prisma.user.update({ where: { id: user.id }, data: { failedLoginCount: 0, lockedUntil: null, lastLoginAt: new Date() } });
   await prisma.auditLog.create({ data: { actorUserId: user.id, action: "USER_LOGIN", entityType: "User", entityId: user.id, metadata: context } });
   await createSession(user.id);
-  redirect(user.roles.some(({ role }) => ["ADMIN", "SUPERADMIN", "RESULTS_MANAGER"].includes(role.code)) ? "/admin" : "/");
+  redirect(user.roles.some(({ role }) => ["ADMIN", "SUPERADMIN", "RESULTS_MANAGER"].includes(role.code)) ? "/admin" : "/jogar");
 }
 
 export async function logoutAction(): Promise<void> {

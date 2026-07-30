@@ -40,6 +40,22 @@ async function main() {
     });
   }
 
+  const officialCities = [
+    ["gaia", "Gaia"],
+    ["figueira-da-foz", "Figueira da Foz"],
+    ["lisboa", "Lisboa"],
+    ["cascais", "Cascais"],
+    ["sines", "Sines"],
+    ["portimao", "Portimão"],
+  ] as const;
+  for (const [slug, name] of officialCities) {
+    await prisma.city.upsert({
+      where: { slug },
+      update: { name, countryCode: "PT", active: true },
+      create: { slug, name, countryCode: "PT" },
+    });
+  }
+
   const anc = await prisma.raceClass.upsert({
     where: { code: "ANC" },
     update: { name: "ANC", active: true },
@@ -231,6 +247,30 @@ async function main() {
     }
   }
 
+  for (const item of stages) {
+    const stageId = stageIds.get(item.number);
+    if (!stageId) continue;
+    for (const raceClass of rootClasses) {
+      await prisma.predictionMarket.upsert({
+        where: { stageId_classId: { stageId, classId: raceClass.id } },
+        update: {
+          code: `${item.slug}-${raceClass.code.toLowerCase()}`,
+          status: "DRAFT",
+          maxPodiumPosition: 3,
+          allowSurpriseInPodium: false,
+        },
+        create: {
+          stageId,
+          classId: raceClass.id,
+          code: `${item.slug}-${raceClass.code.toLowerCase()}`,
+          status: "DRAFT",
+          maxPodiumPosition: 3,
+          allowSurpriseInPodium: false,
+        },
+      });
+    }
+  }
+
   for (const item of boats) {
     const boatId = boatIds.get(item.publicName);
     if (!boatId) continue;
@@ -255,6 +295,7 @@ async function main() {
     ["official_wording_enabled", false, "Controla a utilização da expressão jogo oficial"],
     ["game_launch_stage", { stage: null }, "Etapa a partir da qual o jogo aceita previsões"],
     ["audit_source_version", "1.2.0", "Versão da auditoria utilizada no seed"],
+    ["phase2_schema_version", "1.0.0", "Versão do domínio de previsões"],
   ] as const;
   for (const [key, value, description] of settings) {
     await prisma.systemSetting.upsert({
@@ -267,6 +308,9 @@ async function main() {
   const flags = [
     ["public_game_enabled", false],
     ["registrations_enabled", false],
+    ["predictions_enabled", false],
+    ["profiles_enabled", true],
+    ["preclose_stats_enabled", false],
     ["sailti_sync_enabled", false],
     ["missions_enabled", false],
   ] as const;
@@ -307,7 +351,7 @@ async function main() {
     });
   }
 
-  console.log(`Seed concluído: ${boats.length} embarcações e ${stages.length} etapas.`);
+  console.log(`Seed concluído: ${boats.length} embarcações, ${stages.length} etapas e ${stages.length * 2} mercados em rascunho.`);
 }
 
 main()
