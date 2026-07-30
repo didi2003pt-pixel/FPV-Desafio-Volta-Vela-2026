@@ -8,6 +8,23 @@ const schema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   APP_URL: z.string().url().default("http://localhost:3000"),
   APP_NAME: z.string().min(1).default("Desafio Volta à Vela"),
+  TRUSTED_ORIGINS: z.string().default(""),
+  CSP_REPORT_ONLY: booleanFromString.default("false"),
+  SECURITY_CONTACT_EMAIL: z.string().email().default("seguranca@example.invalid"),
+  PRIVACY_CONTACT_EMAIL: z.string().email().default("privacidade@example.invalid"),
+  LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]).default("info"),
+  STORE_RAW_IP_ADDRESSES: booleanFromString.default("false"),
+  IP_HASH_PEPPER: z.string().min(32),
+  METRICS_TOKEN: z.string().min(24).optional(),
+  DATA_SUBJECT_REQUEST_DAYS: z.coerce.number().int().min(1).max(90).default(30),
+  ACCOUNT_DELETION_GRACE_DAYS: z.coerce.number().int().min(0).max(90).default(7),
+  RETENTION_SESSION_DAYS: z.coerce.number().int().min(1).max(365).default(30),
+  RETENTION_TOKEN_DAYS: z.coerce.number().int().min(1).max(365).default(7),
+  RETENTION_EMAIL_OUTBOX_DAYS: z.coerce.number().int().min(1).max(730).default(90),
+  RETENTION_NOTIFICATION_DAYS: z.coerce.number().int().min(1).max(730).default(180),
+  RETENTION_SECURITY_EVENT_DAYS: z.coerce.number().int().min(30).max(3650).default(365),
+  RETENTION_AUDIT_LOG_DAYS: z.coerce.number().int().min(90).max(3650).default(730),
+  RETENTION_CRON_SECRET: z.string().min(24).optional(),
   DATABASE_URL: z.string().min(1),
   DIRECT_URL: z.string().min(1).optional(),
   REDIS_URL: z.string().min(1),
@@ -38,6 +55,33 @@ const schema = z.object({
   RESULT_RECALCULATION_MAX_RETRIES: z.coerce.number().int().min(1).max(10).default(5),
   CRON_SECRET: z.string().min(24).optional(),
   RESULTS_CRON_SECRET: z.string().min(24).optional(),
+}).superRefine((env, context) => {
+  if (env.NODE_ENV !== "production") return;
+
+  const addIssue = (path: string, message: string) => {
+    context.addIssue({ code: z.ZodIssueCode.custom, path: [path], message });
+  };
+
+  if (!env.APP_URL.startsWith("https://")) {
+    addIssue("APP_URL", "APP_URL tem de usar HTTPS em produção.");
+  }
+  if (!env.TRUSTED_ORIGINS.trim()) {
+    addIssue("TRUSTED_ORIGINS", "TRUSTED_ORIGINS é obrigatório em produção.");
+  }
+  if (env.SECURITY_CONTACT_EMAIL.endsWith("@example.invalid")) {
+    addIssue("SECURITY_CONTACT_EMAIL", "Defina um contacto real de segurança.");
+  }
+  if (env.PRIVACY_CONTACT_EMAIL.endsWith("@example.invalid")) {
+    addIssue("PRIVACY_CONTACT_EMAIL", "Defina um contacto real de privacidade.");
+  }
+  for (const [name, value] of [
+    ["METRICS_TOKEN", env.METRICS_TOKEN],
+    ["CRON_SECRET", env.CRON_SECRET],
+    ["RESULTS_CRON_SECRET", env.RESULTS_CRON_SECRET],
+    ["RETENTION_CRON_SECRET", env.RETENTION_CRON_SECRET],
+  ] as const) {
+    if (!value) addIssue(name, `${name} é obrigatório em produção.`);
+  }
 });
 
 export type AppEnv = z.infer<typeof schema>;

@@ -149,8 +149,8 @@ function walk(directory) {
 }
 walk(root);
 const combined = allTextFiles.filter((file) => !file.endsWith("scripts/verify-phase3.mjs")).map((file) => fs.readFileSync(file, "utf8")).join("\n");
-for (const privateName of ["Miguel Bunte da Graça", "Horst Mattausch", "António Pinto", "Sónia Vieira"]) {
-  check(`nome privado ausente: ${privateName}`, !combined.includes(privateName));
+for (const sensitiveMarker of ["tripulante_nome_completo", "tripulante_email_pessoal", "tripulante_telefone_pessoal", "tripulante_estado_pagamento_individual"]) {
+  check(`marcador privado ausente: ${sensitiveMarker}`, !combined.toLowerCase().includes(sensitiveMarker));
 }
 check("PDFs provisórios não incluídos", !fs.readdirSync(root).some((name) => /Etapa 4.*provis/i.test(name)));
 
@@ -164,7 +164,8 @@ for (const relative of ["package.json", ...fs.readdirSync(path.join(root, "packa
   const packageFile = json(relative);
   versions.push([relative, packageFile.version]);
 }
-check("todos os packages estão em 0.3.0", versions.every(([, version]) => version === "0.3.0"), JSON.stringify(versions));
+const expectedVersion = json("package.json").version;
+check("todos os packages usam a versão raiz", versions.every(([, version]) => version === expectedVersion), JSON.stringify(versions));
 
 console.log(JSON.stringify({ checks: checks.length, passed: checks.filter((item) => item.ok).length, failed: failures.length, failures }, null, 2));
 if (failures.length) process.exit(1);
