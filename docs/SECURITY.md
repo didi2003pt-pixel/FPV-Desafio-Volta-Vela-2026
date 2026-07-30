@@ -12,3 +12,14 @@
 - Nenhum segredo no repositório.
 
 Antes de produção: executar análise de dependências, testes de penetração, revisão RGPD, rotação de segredos e configuração TLS.
+
+
+## Previsões
+
+- autorização sempre no servidor;
+- prazo calculado pelo relógio do servidor;
+- transação serializável;
+- revisão e auditoria de cada alteração;
+- pergunta e outsiders bloqueados após a primeira submissão;
+- endpoint de cron protegido por segredo;
+- nenhuma previsão individual é publicada antes do fecho.

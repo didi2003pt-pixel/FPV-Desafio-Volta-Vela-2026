@@ -20,3 +20,14 @@ npm run db:seed
 ```
 
 Não executar a remoção de volume em produção.
+
+
+## Fase 2 — fecho de mercados
+
+Executar periodicamente:
+
+```bash
+npm run markets:close
+```
+
+Em produção, usar `POST /api/cron/close-markets` com `Authorization: Bearer $CRON_SECRET`. O endpoint é idempotente.
