@@ -1,20 +1,24 @@
-# Desafio Volta à Vela 2026 — Fase 4
+# Desafio Volta à Vela 2026 — Fase 5
 
-Implementação do domínio de **resultados, integração Sailti, pontuação auditável e classificações** sobre a fundação e o jogo das Fases 1 e 2.
+Aplicação full-stack para previsões ANC/ORC, resultados Sailti, pontuação,
+classificações, missões, prémios e comunicação.
 
-Nenhum resultado real foi importado neste pacote. Os resultados provisórios antigos recebidos na auditoria continuam excluídos.
+A Fase 5 adiciona segurança de produção, RGPD operacional, observabilidade, retenção,
+backups, testes e gates de lançamento.
 
-## Arranque local
+## Arranque de desenvolvimento
 
-Requisitos:
+Requisitos recomendados:
 
-- Node.js 24 LTS ou superior;
-- npm 10 ou superior;
-- Docker com PostgreSQL, Redis, MinIO e Mailpit.
+- Node.js 24 LTS;
+- npm 10+;
+- Docker;
+- PostgreSQL 18;
+- Redis 8.
 
 ```bash
 cp .env.example .env
-# definir AUTH_PEPPER, CRON_SECRET, RESULTS_CRON_SECRET e credenciais locais
+# substituir todos os segredos
 npm install
 npm run db:generate
 docker compose up -d postgres redis minio mailpit
@@ -23,108 +27,52 @@ npm run db:seed
 npm run dev
 ```
 
-Serviços locais:
+## Verificações
 
-- aplicação: `http://localhost:3000`
-- administração: `http://localhost:3000/admin`
-- resultados: `http://localhost:3000/admin/resultados`
-- regras: `http://localhost:3000/admin/pontuacao`
-- classificações: `http://localhost:3000/classificacoes`
-- Mailpit: `http://localhost:8025`
-- MinIO Console: `http://localhost:9001`
+```bash
+npm run validate:all
+npm run typecheck
+npm test
+npm run build
+npm run test:e2e
+npm run release:gate
+```
 
-## Fluxo operacional de uma etapa
+O `release:gate` deve falhar enquanto não houver lockfile, configuração de produção,
+validação jurídica, backup/restauro e testes reais.
 
-1. Configurar horários e abrir o mercado ANC/ORC.
-2. Fechar o mercado antes de receber resultados.
-3. Em `/admin/resultados`, carregar CSV, JSON ou XRR/XML; em emergência, criar resultado manual.
-4. Rever todas as correspondências entre linhas externas e embarcações.
-5. Guardar a resposta oficial da pergunta especial, quando aplicável.
-6. Confirmar o resultado como provisório ou oficial.
-7. Executar o cálculo da pontuação.
-8. Rever o ranking por etapa, geral, cidade e clube.
-9. Quando o resultado oficial mudar, importar a nova fonte e criar uma nova versão; nunca editar a versão anterior.
-
-O sistema rejeita a confirmação enquanto o mercado não estiver `CLOSED`.
-
-## Integração Sailti
-
-A aplicação usa uma interface substituível de fornecedores:
-
-- `SailtiApiProvider` — reservado para API autorizada;
-- `SailtiXrrProvider` / XRR — ingestão XML estruturada;
-- `SailtiFileProvider` — CSV, JSON e XRR/XML;
-- `SailtiHtmlProvider` — deliberadamente desativado sem autorização;
-- `ManualResultsProvider` — fallback auditado.
-
-A correspondência usa, por ordem: identificador externo, número de vela, número de barco, nome/alias e revisão manual.
-
-## Pontuação inicial
-
-- vencedor exato: 100;
-- segundo exato: 75;
-- terceiro exato: 75;
-- embarcação no pódio noutra posição: 40;
-- surpresa no top 5: 60;
-- pergunta especial correta: 50;
-- participação em todas as etapas elegíveis: 100.
-
-Cada atribuição é guardada em `score_events`, com explicação, regra, cálculo e resultado de origem. Os valores podem ser versionados no painel; uma alteração cria uma nova versão, não reescreve a anterior.
-
-## Classificações
-
-- geral por classe;
-- etapa por classe;
-- cidade — média dos melhores 10;
-- clube — média dos melhores 10.
-
-Os snapshots provisórios e definitivos são separados. O desempate individual usa acertos de vencedor, posições exatas, surpresas, perguntas, erro numérico e instante da última previsão.
-
-## Feature flags
-
-O seed mantém os novos módulos desligados até validação operacional:
-
-- `result_imports_enabled=false`
-- `results_enabled=false`
-- `rankings_enabled=false`
-- `sailti_sync_enabled=false`
-
-## Operações automáticas
-
-Fecho dos mercados:
+## Operações
 
 ```bash
 npm run markets:close
-```
-
-Recálculo de resultados pendentes:
-
-```bash
 npm run results:recalculate
+npm run privacy:retention
+npm run backup:db
+npm run backup:verify -- backups/ficheiro.dump.age
 ```
 
-Ou através do endpoint protegido:
+## Rotas operacionais
 
-```bash
-curl -X POST http://localhost:3000/api/cron/recalculate-results \
-  -H "Authorization: Bearer $RESULTS_CRON_SECRET"
-```
+- `/api/health`
+- `/api/ready`
+- `/api/version`
+- `/api/metrics` — Bearer token
+- `/perfil/privacidade`
+- `/admin/privacidade`
 
-## Validação
+## Documentação
 
-```bash
-npm run verify:foundation
-npm run verify:phase2
-npm run verify:phase3
-npm test
-npm run typecheck
-npm run build
-```
+- `docs/PRODUCTION_RUNBOOK.md`
+- `docs/RGPD.md`
+- `docs/DPIA_SCREENING.md`
+- `docs/INCIDENT_RESPONSE.md`
+- `docs/BACKUP_RESTORE.md`
+- `docs/OBSERVABILITY.md`
+- `docs/PERFORMANCE.md`
+- `docs/PHASE5_REPORT.md`
+- `PHASE5_VALIDATION.json`
 
-## Limitações antes de produção
+## Estado
 
-O ambiente onde o pacote foi gerado não conseguiu instalar as dependências npm, criar o cliente Prisma, executar PostgreSQL/Docker nem produzir o build Next.js. O repositório foi verificado estruturalmente e os módulos puros foram compilados/testados, mas a passagem por CI com Node 24, base de dados real e testes end-to-end continua obrigatória.
-
-
-## Fase 4
-Missões, prémios, notificações e cartões sociais estão implementados. Execute `npm run verify:phase4`.
+O código da Fase 5 está implementado e verificado estruturalmente. Não está autorizado
+para produção até o gate de lançamento ser concluído em staging.

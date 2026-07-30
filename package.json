@@ -1,6 +1,6 @@
 {
   "name": "desafio-volta-vela-2026",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "private": true,
   "type": "module",
   "engines": {
@@ -32,7 +32,18 @@
     "results:recalculate": "npm --workspace @desafio/database run results:recalculate",
     "test:phase3:runtime": "tsx scripts/runtime-phase3.ts",
     "verify:phase4": "node scripts/verify-phase4.mjs",
-    "test:phase4:runtime": "tsx scripts/runtime-phase4.ts"
+    "test:phase4:runtime": "tsx scripts/runtime-phase4.ts",
+    "verify:phase5": "node scripts/verify-phase5.mjs",
+    "test:phase5:runtime": "node scripts/runtime-phase5.mjs",
+    "privacy:retention": "npm --workspace @desafio/database run privacy:retention",
+    "privacy:anonymize": "npm --workspace @desafio/database run privacy:anonymize",
+    "backup:db": "bash scripts/backup-postgres.sh",
+    "backup:verify": "bash scripts/verify-postgres-backup.sh",
+    "restore:db": "bash scripts/restore-postgres.sh",
+    "backup:prune": "bash scripts/prune-backups.sh",
+    "test:e2e": "playwright test",
+    "release:gate": "node scripts/release-gate.mjs",
+    "validate:all": "npm run verify:foundation && npm run verify:phase2 && npm run verify:phase3 && npm run verify:phase4 && npm run verify:phase5"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",
@@ -41,6 +52,7 @@
     "prettier": "^3.6.0",
     "tsx": "^4.20.0",
     "typescript": "^5.8.3",
-    "vitest": "^3.2.0"
+    "vitest": "^3.2.0",
+    "@playwright/test": "^1.55.0"
   }
 }

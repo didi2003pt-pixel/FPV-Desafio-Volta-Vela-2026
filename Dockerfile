@@ -6,8 +6,12 @@ COPY packages/auth/package.json packages/auth/package.json
 COPY packages/config/package.json packages/config/package.json
 COPY packages/database/package.json packages/database/package.json
 COPY packages/game/package.json packages/game/package.json
+COPY packages/operations/package.json packages/operations/package.json
 COPY packages/ui/package.json packages/ui/package.json
 COPY packages/testing/package.json packages/testing/package.json
+COPY packages/engagement/package.json packages/engagement/package.json
+COPY packages/scoring/package.json packages/scoring/package.json
+COPY packages/sailti/package.json packages/sailti/package.json
 RUN npm install
 
 FROM node:24-bookworm-slim AS builder
