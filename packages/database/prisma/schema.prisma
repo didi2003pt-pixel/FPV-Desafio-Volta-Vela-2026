@@ -1,0 +1,520 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserStatus {
+  PENDING_VERIFICATION
+  ACTIVE
+  SUSPENDED
+  DELETED
+}
+
+enum CommunityType {
+  CITY
+  CLUB
+  COMPANY
+  SCHOOL
+  ORGANIZATION
+}
+
+enum MembershipStatus {
+  ACTIVE
+  PENDING
+  REJECTED
+  LEFT
+}
+
+enum BoatStatus {
+  ACTIVE
+  INACTIVE
+  PENDING_VALIDATION
+}
+
+enum BoatNameType {
+  PUBLIC
+  TECHNICAL
+  SPONSORED
+  ALIAS
+}
+
+enum IdentifierType {
+  BOAT_NUMBER
+  SAIL_NUMBER
+  REGISTRATION_ID
+  EXTERNAL_ID
+}
+
+enum CertificateType {
+  ANC
+  ORC
+}
+
+enum CertificateStatus {
+  VALID
+  EXPIRED
+  PENDING
+  REPLACED
+  PROVISIONAL
+  REJECTED
+  MISSING
+}
+
+enum StageStatus {
+  DRAFT
+  SCHEDULED
+  PREDICTIONS_OPEN
+  PREDICTIONS_CLOSED
+  IN_PROGRESS
+  PROVISIONAL_RESULTS
+  OFFICIAL_RESULTS
+  POSTPONED
+  CANCELLED
+  ARCHIVED
+}
+
+enum ConsentType {
+  TERMS
+  PRIVACY
+  MARKETING_EMAIL
+  MARKETING_SMS
+  ANALYTICS
+}
+
+enum OutboxStatus {
+  PENDING
+  SENT
+  FAILED
+  CANCELLED
+}
+
+model User {
+  id                  String    @id @default(uuid()) @db.Uuid
+  email               String    @unique @db.VarChar(254)
+  passwordHash        String?   @map("password_hash")
+  status              UserStatus @default(PENDING_VERIFICATION)
+  emailVerifiedAt     DateTime? @map("email_verified_at") @db.Timestamptz(6)
+  failedLoginCount    Int       @default(0) @map("failed_login_count")
+  lockedUntil         DateTime? @map("locked_until") @db.Timestamptz(6)
+  lastLoginAt         DateTime? @map("last_login_at") @db.Timestamptz(6)
+  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt           DateTime? @map("deleted_at") @db.Timestamptz(6)
+  profile             Profile?
+  roles               UserRole[]
+  sessions            Session[]
+  verificationTokens  EmailVerificationToken[]
+  passwordResetTokens PasswordResetToken[]
+  consents            Consent[]
+  memberships         CommunityMembership[]
+  auditLogs           AuditLog[] @relation("AuditActor")
+
+  @@map("users")
+}
+
+model Profile {
+  id          String  @id @default(uuid()) @db.Uuid
+  userId      String  @unique @map("user_id") @db.Uuid
+  name        String  @db.VarChar(120)
+  nickname    String  @unique @db.VarChar(40)
+  countryCode String  @default("PT") @map("country_code") @db.Char(2)
+  cityId      String? @map("city_id") @db.Uuid
+  clubId      String? @map("club_id") @db.Uuid
+  avatarKey   String? @map("avatar_key") @db.VarChar(500)
+  phone       String? @db.VarChar(40)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  user        User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  city        City?   @relation(fields: [cityId], references: [id], onDelete: SetNull)
+  club        Club?   @relation(fields: [clubId], references: [id], onDelete: SetNull)
+
+  @@index([cityId])
+  @@index([clubId])
+  @@map("profiles")
+}
+
+model Role {
+  id          String     @id @default(uuid()) @db.Uuid
+  code        String     @unique @db.VarChar(50)
+  name        String     @db.VarChar(100)
+  description String?    @db.VarChar(500)
+  userRoles   UserRole[]
+  createdAt   DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@map("roles")
+}
+
+model UserRole {
+  userId     String   @map("user_id") @db.Uuid
+  roleId     String   @map("role_id") @db.Uuid
+  assignedAt DateTime @default(now()) @map("assigned_at") @db.Timestamptz(6)
+  assignedBy String?  @map("assigned_by") @db.Uuid
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role       Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
+  @@index([roleId])
+  @@map("user_roles")
+}
+
+model Session {
+  id           String    @id @default(uuid()) @db.Uuid
+  userId       String    @map("user_id") @db.Uuid
+  tokenHash    String    @unique @map("token_hash") @db.Char(64)
+  expiresAt    DateTime  @map("expires_at") @db.Timestamptz(6)
+  lastSeenAt   DateTime  @default(now()) @map("last_seen_at") @db.Timestamptz(6)
+  ipAddress    String?   @map("ip_address") @db.Inet
+  userAgent    String?   @map("user_agent") @db.VarChar(500)
+  revokedAt    DateTime? @map("revoked_at") @db.Timestamptz(6)
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+model EmailVerificationToken {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  tokenHash String    @unique @map("token_hash") @db.Char(64)
+  expiresAt DateTime  @map("expires_at") @db.Timestamptz(6)
+  usedAt    DateTime? @map("used_at") @db.Timestamptz(6)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("email_verification_tokens")
+}
+
+model PasswordResetToken {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  tokenHash String    @unique @map("token_hash") @db.Char(64)
+  expiresAt DateTime  @map("expires_at") @db.Timestamptz(6)
+  usedAt    DateTime? @map("used_at") @db.Timestamptz(6)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("password_reset_tokens")
+}
+
+model Consent {
+  id        String      @id @default(uuid()) @db.Uuid
+  userId    String      @map("user_id") @db.Uuid
+  type      ConsentType
+  version   String      @db.VarChar(50)
+  granted   Boolean
+  ipAddress String?     @map("ip_address") @db.Inet
+  userAgent String?     @map("user_agent") @db.VarChar(500)
+  createdAt DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, type])
+  @@map("consents")
+}
+
+model City {
+  id        String    @id @default(uuid()) @db.Uuid
+  name      String    @db.VarChar(100)
+  slug      String    @unique @db.VarChar(120)
+  countryCode String  @default("PT") @map("country_code") @db.Char(2)
+  active    Boolean   @default(true)
+  profiles  Profile[]
+  clubs     Club[]
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([name, countryCode])
+  @@map("cities")
+}
+
+model Club {
+  id        String    @id @default(uuid()) @db.Uuid
+  name      String    @db.VarChar(180)
+  slug      String    @unique @db.VarChar(200)
+  cityId    String?   @map("city_id") @db.Uuid
+  active    Boolean   @default(true)
+  city      City?     @relation(fields: [cityId], references: [id], onDelete: SetNull)
+  profiles  Profile[]
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([cityId])
+  @@map("clubs")
+}
+
+model Community {
+  id          String                @id @default(uuid()) @db.Uuid
+  type        CommunityType
+  name        String                @db.VarChar(180)
+  slug        String                @unique @db.VarChar(200)
+  active      Boolean               @default(true)
+  memberships CommunityMembership[]
+  createdAt   DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime              @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([type])
+  @@map("communities")
+}
+
+model CommunityMembership {
+  id          String           @id @default(uuid()) @db.Uuid
+  userId      String           @map("user_id") @db.Uuid
+  communityId String           @map("community_id") @db.Uuid
+  status      MembershipStatus @default(ACTIVE)
+  joinedAt    DateTime         @default(now()) @map("joined_at") @db.Timestamptz(6)
+  leftAt      DateTime?        @map("left_at") @db.Timestamptz(6)
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  community   Community        @relation(fields: [communityId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, communityId])
+  @@index([communityId, status])
+  @@map("community_memberships")
+}
+
+model RaceClass {
+  id        String      @id @default(uuid()) @db.Uuid
+  code      String      @unique @db.VarChar(30)
+  name      String      @db.VarChar(100)
+  parentId  String?     @map("parent_id") @db.Uuid
+  active    Boolean     @default(true)
+  parent    RaceClass?  @relation("ClassHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children  RaceClass[] @relation("ClassHierarchy")
+  boats     Boat[]
+  stageClasses StageClass[]
+  createdAt DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime    @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([parentId])
+  @@map("race_classes")
+}
+
+model Boat {
+  id                 String      @id @default(uuid()) @db.Uuid
+  registrationId     String      @unique @map("registration_id") @db.VarChar(20)
+  boatNumber         String      @unique @map("boat_number") @db.VarChar(20)
+  publicName         String      @map("public_name") @db.VarChar(180)
+  technicalName      String?     @map("technical_name") @db.VarChar(180)
+  classId            String      @map("class_id") @db.Uuid
+  status             BoatStatus  @default(ACTIVE)
+  sourceAuditVersion String      @map("source_audit_version") @db.VarChar(20)
+  class              RaceClass   @relation(fields: [classId], references: [id], onDelete: Restrict)
+  names              BoatName[]
+  identifiers        BoatIdentifier[]
+  certificates       BoatCertificate[]
+  externalIdentifiers BoatExternalIdentifier[]
+  stageBoats         StageBoat[]
+  createdAt          DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime    @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt          DateTime?   @map("deleted_at") @db.Timestamptz(6)
+
+  @@index([classId, status])
+  @@map("boats")
+}
+
+model BoatName {
+  id        String       @id @default(uuid()) @db.Uuid
+  boatId    String       @map("boat_id") @db.Uuid
+  type      BoatNameType
+  name      String       @db.VarChar(180)
+  validFrom DateTime?    @map("valid_from") @db.Date
+  validUntil DateTime?   @map("valid_until") @db.Date
+  isCurrent Boolean      @default(true) @map("is_current")
+  source    String       @db.VarChar(200)
+  boat      Boat         @relation(fields: [boatId], references: [id], onDelete: Cascade)
+  createdAt DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@unique([boatId, type, name])
+  @@index([name])
+  @@map("boat_names")
+}
+
+model BoatIdentifier {
+  id        String         @id @default(uuid()) @db.Uuid
+  boatId    String         @map("boat_id") @db.Uuid
+  type      IdentifierType
+  value     String         @db.VarChar(100)
+  normalizedValue String   @map("normalized_value") @db.VarChar(100)
+  countryCode String?      @map("country_code") @db.VarChar(10)
+  suffix    String?        @db.VarChar(20)
+  isCurrent Boolean        @default(true) @map("is_current")
+  source    String         @db.VarChar(200)
+  boat      Boat           @relation(fields: [boatId], references: [id], onDelete: Cascade)
+  createdAt DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@unique([type, normalizedValue])
+  @@index([boatId, type, isCurrent])
+  @@map("boat_identifiers")
+}
+
+model BoatCertificate {
+  id                   String            @id @default(uuid()) @db.Uuid
+  boatId               String            @map("boat_id") @db.Uuid
+  type                 CertificateType
+  reference            String?           @db.VarChar(100)
+  model                 String?           @db.VarChar(180)
+  ratingType            String?           @map("rating_type") @db.VarChar(50)
+  ratingValue           Decimal?          @map("rating_value") @db.Decimal(12, 6)
+  issuedAt              DateTime?          @map("issued_at") @db.Date
+  validUntil            DateTime?          @map("valid_until") @db.Date
+  status                CertificateStatus
+  sourceFiles           Json              @map("source_files")
+  sourceHashes          Json              @map("source_hashes")
+  isCurrent             Boolean           @default(true) @map("is_current")
+  notes                 String?           @db.Text
+  boat                  Boat              @relation(fields: [boatId], references: [id], onDelete: Cascade)
+  createdAt             DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt             DateTime          @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([boatId, type, isCurrent])
+  @@map("boat_certificates")
+}
+
+model BoatExternalIdentifier {
+  id          String   @id @default(uuid()) @db.Uuid
+  boatId      String   @map("boat_id") @db.Uuid
+  provider    String   @db.VarChar(50)
+  externalId  String   @map("external_id") @db.VarChar(200)
+  externalName String? @map("external_name") @db.VarChar(180)
+  verifiedAt  DateTime? @map("verified_at") @db.Timestamptz(6)
+  boat        Boat     @relation(fields: [boatId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@unique([provider, externalId])
+  @@index([boatId])
+  @@map("boat_external_identifiers")
+}
+
+model Stage {
+  id                  String      @id @default(uuid()) @db.Uuid
+  number              Int         @unique
+  slug                String      @unique @db.VarChar(150)
+  name                String      @db.VarChar(200)
+  raceType            String      @map("race_type") @db.VarChar(100)
+  startLocation       String?     @map("start_location") @db.VarChar(150)
+  finishLocation      String?     @map("finish_location") @db.VarChar(150)
+  stageDate           DateTime    @map("stage_date") @db.Date
+  predictionsOpenAt   DateTime?   @map("predictions_open_at") @db.Timestamptz(6)
+  predictionsCloseAt  DateTime?   @map("predictions_close_at") @db.Timestamptz(6)
+  scheduledStartAt    DateTime?   @map("scheduled_start_at") @db.Timestamptz(6)
+  status              StageStatus @default(DRAFT)
+  imageKey            String?     @map("image_key") @db.VarChar(500)
+  sponsorId           String?     @map("sponsor_id") @db.Uuid
+  sponsor             Sponsor?    @relation(fields: [sponsorId], references: [id], onDelete: SetNull)
+  stageClasses        StageClass[]
+  stageBoats          StageBoat[]
+  createdAt           DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime    @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([stageDate, status])
+  @@map("stages")
+}
+
+model StageClass {
+  stageId String    @map("stage_id") @db.Uuid
+  classId String    @map("class_id") @db.Uuid
+  active  Boolean   @default(true)
+  stage   Stage     @relation(fields: [stageId], references: [id], onDelete: Cascade)
+  class   RaceClass @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  @@id([stageId, classId])
+  @@index([classId])
+  @@map("stage_classes")
+}
+
+model StageBoat {
+  id                 String   @id @default(uuid()) @db.Uuid
+  stageId            String   @map("stage_id") @db.Uuid
+  boatId             String   @map("boat_id") @db.Uuid
+  eligibleForPrediction Boolean @default(true) @map("eligible_for_prediction")
+  surpriseEligible   Boolean  @default(false) @map("surprise_eligible")
+  participationSource String  @map("participation_source") @db.VarChar(200)
+  stage               Stage   @relation(fields: [stageId], references: [id], onDelete: Cascade)
+  boat                Boat    @relation(fields: [boatId], references: [id], onDelete: Cascade)
+  createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@unique([stageId, boatId])
+  @@index([boatId])
+  @@map("stage_boats")
+}
+
+model Sponsor {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String   @db.VarChar(180)
+  slug      String   @unique @db.VarChar(200)
+  website   String?  @db.VarChar(500)
+  logoKey   String?  @map("logo_key") @db.VarChar(500)
+  active    Boolean  @default(true)
+  stages    Stage[]
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("sponsors")
+}
+
+model AuditLog {
+  id          String   @id @default(uuid()) @db.Uuid
+  actorUserId String?  @map("actor_user_id") @db.Uuid
+  action      String   @db.VarChar(100)
+  entityType  String   @map("entity_type") @db.VarChar(100)
+  entityId    String?  @map("entity_id") @db.VarChar(200)
+  before      Json?
+  after       Json?
+  metadata    Json?
+  ipAddress   String?  @map("ip_address") @db.Inet
+  userAgent   String?  @map("user_agent") @db.VarChar(500)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  actor       User?    @relation("AuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([entityType, entityId])
+  @@index([actorUserId, createdAt])
+  @@map("audit_logs")
+}
+
+model FeatureFlag {
+  id          String   @id @default(uuid()) @db.Uuid
+  key         String   @unique @db.VarChar(100)
+  enabled     Boolean  @default(false)
+  description String?  @db.VarChar(500)
+  rules       Json?
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("feature_flags")
+}
+
+model SystemSetting {
+  id          String   @id @default(uuid()) @db.Uuid
+  key         String   @unique @db.VarChar(100)
+  value       Json
+  description String?  @db.VarChar(500)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("system_settings")
+}
+
+model EmailOutbox {
+  id          String       @id @default(uuid()) @db.Uuid
+  template    String       @db.VarChar(100)
+  recipient   String       @db.VarChar(254)
+  subject     String       @db.VarChar(300)
+  payload     Json
+  status      OutboxStatus @default(PENDING)
+  attempts    Int          @default(0)
+  lastError   String?      @map("last_error") @db.Text
+  sentAt      DateTime?    @map("sent_at") @db.Timestamptz(6)
+  createdAt   DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime     @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([status, createdAt])
+  @@map("email_outbox")
+}
