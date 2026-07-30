@@ -1,14 +1,20 @@
-# Desafio Volta à Vela 2026 — Fase 2
+# Desafio Volta à Vela 2026 — Fase 3
 
-Implementação do domínio do jogo: etapas, embarcações, mercados ANC/ORC, pergunta especial, previsões, bloqueio por prazo, perfil do participante e configuração administrativa.
+Implementação do domínio de **resultados, integração Sailti, pontuação auditável e classificações** sobre a fundação e o jogo das Fases 1 e 2.
 
-A Fase 2 **não** calcula resultados, pontos ou rankings. Esses módulos pertencem à Fase 3.
+Nenhum resultado real foi importado neste pacote. Os resultados provisórios antigos recebidos na auditoria continuam excluídos.
 
 ## Arranque local
 
+Requisitos:
+
+- Node.js 24 LTS ou superior;
+- npm 10 ou superior;
+- Docker com PostgreSQL, Redis, MinIO e Mailpit.
+
 ```bash
 cp .env.example .env
-# alterar AUTH_PEPPER, CRON_SECRET e credenciais locais
+# definir AUTH_PEPPER, CRON_SECRET, RESULTS_CRON_SECRET e credenciais locais
 npm install
 npm run db:generate
 docker compose up -d postgres redis minio mailpit
@@ -21,32 +27,87 @@ Serviços locais:
 
 - aplicação: `http://localhost:3000`
 - administração: `http://localhost:3000/admin`
+- resultados: `http://localhost:3000/admin/resultados`
+- regras: `http://localhost:3000/admin/pontuacao`
+- classificações: `http://localhost:3000/classificacoes`
 - Mailpit: `http://localhost:8025`
 - MinIO Console: `http://localhost:9001`
-- health: `http://localhost:3000/api/health`
-- readiness: `http://localhost:3000/api/ready`
 
-## Preparar uma etapa
+## Fluxo operacional de uma etapa
 
-1. Abrir `/admin/etapas`.
-2. Configurar a partida e o estado da etapa.
-3. Configurar as janelas ANC e ORC.
-4. Marcar as embarcações surpresa elegíveis.
-5. Criar e ativar a pergunta especial.
-6. Confirmar que não existem previsões de teste.
-7. Ativar `public_game_enabled` e `predictions_enabled` em `/admin/configuracao`.
+1. Configurar horários e abrir o mercado ANC/ORC.
+2. Fechar o mercado antes de receber resultados.
+3. Em `/admin/resultados`, carregar CSV, JSON ou XRR/XML; em emergência, criar resultado manual.
+4. Rever todas as correspondências entre linhas externas e embarcações.
+5. Guardar a resposta oficial da pergunta especial, quando aplicável.
+6. Confirmar o resultado como provisório ou oficial.
+7. Executar o cálculo da pontuação.
+8. Rever o ranking por etapa, geral, cidade e clube.
+9. Quando o resultado oficial mudar, importar a nova fonte e criar uma nova versão; nunca editar a versão anterior.
 
-Não abrir um mercado sem datas completas. O fecho é validado no servidor e pode ser aplicado por cron:
+O sistema rejeita a confirmação enquanto o mercado não estiver `CLOSED`.
+
+## Integração Sailti
+
+A aplicação usa uma interface substituível de fornecedores:
+
+- `SailtiApiProvider` — reservado para API autorizada;
+- `SailtiXrrProvider` / XRR — ingestão XML estruturada;
+- `SailtiFileProvider` — CSV, JSON e XRR/XML;
+- `SailtiHtmlProvider` — deliberadamente desativado sem autorização;
+- `ManualResultsProvider` — fallback auditado.
+
+A correspondência usa, por ordem: identificador externo, número de vela, número de barco, nome/alias e revisão manual.
+
+## Pontuação inicial
+
+- vencedor exato: 100;
+- segundo exato: 75;
+- terceiro exato: 75;
+- embarcação no pódio noutra posição: 40;
+- surpresa no top 5: 60;
+- pergunta especial correta: 50;
+- participação em todas as etapas elegíveis: 100.
+
+Cada atribuição é guardada em `score_events`, com explicação, regra, cálculo e resultado de origem. Os valores podem ser versionados no painel; uma alteração cria uma nova versão, não reescreve a anterior.
+
+## Classificações
+
+- geral por classe;
+- etapa por classe;
+- cidade — média dos melhores 10;
+- clube — média dos melhores 10.
+
+Os snapshots provisórios e definitivos são separados. O desempate individual usa acertos de vencedor, posições exatas, surpresas, perguntas, erro numérico e instante da última previsão.
+
+## Feature flags
+
+O seed mantém os novos módulos desligados até validação operacional:
+
+- `result_imports_enabled=false`
+- `results_enabled=false`
+- `rankings_enabled=false`
+- `sailti_sync_enabled=false`
+
+## Operações automáticas
+
+Fecho dos mercados:
 
 ```bash
 npm run markets:close
 ```
 
-Ou através de:
+Recálculo de resultados pendentes:
 
 ```bash
-curl -X POST http://localhost:3000/api/cron/close-markets \
-  -H "Authorization: Bearer $CRON_SECRET"
+npm run results:recalculate
+```
+
+Ou através do endpoint protegido:
+
+```bash
+curl -X POST http://localhost:3000/api/cron/recalculate-results \
+  -H "Authorization: Bearer $RESULTS_CRON_SECRET"
 ```
 
 ## Validação
@@ -54,34 +115,12 @@ curl -X POST http://localhost:3000/api/cron/close-markets \
 ```bash
 npm run verify:foundation
 npm run verify:phase2
+npm run verify:phase3
 npm test
 npm run typecheck
+npm run build
 ```
 
-## Regras implementadas
+## Limitações antes de produção
 
-- previsão separada por etapa e classe ANC/ORC;
-- vencedor, segundo, terceiro, surpresa e pergunta especial;
-- três embarcações distintas no pódio;
-- surpresa limitada à lista editorial definida pela organização;
-- surpresa fora do pódio por defeito;
-- edição apenas até ao prazo do servidor;
-- transação serializável e unicidade por utilizador/mercado;
-- histórico de revisões e auditoria;
-- bloqueio automático de mercados expirados;
-- pergunta e elegibilidade bloqueadas após a primeira previsão;
-- dados de tripulantes não incluídos.
-
-## Feature flags
-
-O seed deixa o jogo público e as previsões desativados:
-
-- `public_game_enabled=false`
-- `predictions_enabled=false`
-- `registrations_enabled=false`
-- `profiles_enabled=true`
-- `preclose_stats_enabled=false`
-
-## Limitação do pacote
-
-O ambiente de geração não instalou dependências npm nem executou PostgreSQL/Docker. O primeiro `npm install` deve gerar e versionar o `package-lock.json`. Depois, executar a migração, o seed, os testes e o build num ambiente com os serviços disponíveis.
+O ambiente onde o pacote foi gerado não conseguiu instalar as dependências npm, criar o cliente Prisma, executar PostgreSQL/Docker nem produzir o build Next.js. O repositório foi verificado estruturalmente e os módulos puros foram compilados/testados, mas a passagem por CI com Node 24, base de dados real e testes end-to-end continua obrigatória.
