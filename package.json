@@ -1,0 +1,39 @@
+{
+  "name": "desafio-volta-vela-2026",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24.0.0",
+    "npm": ">=10.0.0"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm --workspace @desafio/web run dev",
+    "build": "npm run db:generate && npm --workspace @desafio/web run build",
+    "start": "npm --workspace @desafio/web run start",
+    "lint": "npm run lint --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "db:generate": "npm --workspace @desafio/database run db:generate",
+    "db:migrate": "npm --workspace @desafio/database run db:migrate",
+    "db:deploy": "npm --workspace @desafio/database run db:deploy",
+    "db:seed": "npm --workspace @desafio/database run db:seed",
+    "db:studio": "npm --workspace @desafio/database run db:studio",
+    "infra:up": "docker compose up -d postgres redis minio mailpit",
+    "infra:down": "docker compose down",
+    "verify:foundation": "node scripts/verify-foundation.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "eslint": "^9.0.0",
+    "eslint-config-next": "^16.0.0",
+    "prettier": "^3.6.0",
+    "tsx": "^4.20.0",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.0"
+  }
+}
