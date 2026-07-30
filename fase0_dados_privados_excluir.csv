@@ -1,0 +1,7 @@
+﻿source,data,public_policy,internal_policy
+LISTA DE INSCRITOS E TRIPULANTES.VAP (1).pdf,"Nomes de armadores, telefones e emails","Excluir integralmente do frontend, APIs públicas, seeds e analytics identificáveis.",Guardar apenas se operacionalmente necessário; acesso restrito e retenção definida.
+Controlo Inscrição VAP (1).pdf,Nomes de responsáveis e estado de documentos/seguro,Não publicar.,Acesso administrativo; não utilizar para gamificação.
+Certificados ANC/ORC,"Nomes de proprietários, assinaturas, entidades e dados técnicos extensos","Publicar apenas nome do barco, vela, classe/grupo e ficha técnica mínima se autorizada.",Guardar original protegido para auditoria; não expor assinatura ou dados pessoais.
+Controlo - Volta a Portugal 2026.xlsx,"Nomes de staff, responsáveis, convidados, notas internas e um telefone operacional",Não publicar.,Separar do sistema público; acesso por função.
+Previsões futuras dos jogadores,"Email, nickname, cidade, atividade e preferências",Mostrar apenas nickname e dados agregados após fecho.,"Consentimentos separados, minimização, exportação e eliminação RGPD."
+LISTA DE INSCRITOS E TRIPULANTES.VAP (2).pdf,"201 nomes de tripulantes, licença desportiva individual, estado de pagamento e observações de faturação/pagamento.","Excluir integralmente nomes e estados individuais do frontend, seeds, rankings, cartões sociais e APIs públicas.",Acesso restrito; usar apenas para operação da prova. Nos datasets de desenvolvimento usar contagens agregadas ou dados sintéticos.

@@ -1,0 +1,47 @@
+{
+  "checked_at": "2026-07-29T15:21:00Z",
+  "urls": {
+    "races": "https://fpv.sailti.com/pt/default/races",
+    "results": "https://fpv.sailti.com/pt/default/races/race-resultsall?text=volta-a-portugal-a-vela-2026-pt&menuaction=race"
+  },
+  "verification_status": "unverified_from_execution_environment",
+  "observations": [
+    "Os URLs diretos não puderam ser carregados pelo ambiente de auditoria.",
+    "Não foi encontrada documentação pública específica de uma API para a instância FPV Sailti.",
+    "A World Sailing lista o Sailti como software compatível com o formato XML Regatta Reporting (XRR).",
+    "A compatibilidade XRR não prova que a instância FPV exponha um endpoint de download; deve ser confirmada com FPV/Sailti."
+  ],
+  "recommended_order": [
+    "API oficial autenticada ou exportação XRR/XML disponibilizada por FPV/Sailti.",
+    "Exportação oficial CSV/XLSX/JSON/XML por etapa.",
+    "Importação de ficheiro oficial através do painel.",
+    "Leitura HTML autorizada, com testes de regressão e sem depender dela como único método.",
+    "Introdução manual auditada como fallback."
+  ],
+  "required_controls": [
+    "Guardar fonte original e SHA-256.",
+    "Associar por identificador externo e número de vela do certificado.",
+    "Mostrar diferenças antes de confirmar.",
+    "Nunca sobrescrever número de barco, número de vela, nome público, classe ou participação.",
+    "Versionar resultados e recalcular pontos apenas após confirmação.",
+    "Suportar resultados provisórios e oficiais.",
+    "Garantir idempotência."
+  ],
+  "proposed_provider_interface": {
+    "methods": [
+      "testConnection",
+      "fetchCompetition",
+      "fetchStages",
+      "fetchEntries",
+      "fetchResults",
+      "downloadSource"
+    ],
+    "implementations": [
+      "SailtiApiProvider",
+      "SailtiXrrProvider",
+      "SailtiFileProvider",
+      "SailtiHtmlProvider (apenas autorizado)",
+      "ManualResultsProvider"
+    ]
+  }
+}
