@@ -24,6 +24,10 @@ export async function getStageBySlug(slug: string) {
           _count: { select: { predictions: true } },
         },
       },
+      results: {
+        where: { isCurrent: true, status: { in: ["PROVISIONAL", "OFFICIAL"] } },
+        include: { class: true },
+      },
       stageBoats: {
         where: { eligibleForPrediction: true },
         include: {

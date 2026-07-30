@@ -22,6 +22,7 @@ export async function SiteHeader() {
         <nav aria-label="Navegação principal" className="flex flex-wrap items-center justify-end gap-2 text-sm font-bold">
           <Link className="rounded-lg px-3 py-2 hover:bg-white/10" href="/etapas">Etapas</Link>
           <Link className="rounded-lg px-3 py-2 hover:bg-white/10" href="/embarcacoes">Embarcações</Link>
+          <Link className="rounded-lg px-3 py-2 hover:bg-white/10" href="/classificacoes">Classificações</Link>
           <Link className="rounded-lg bg-brand-red px-3 py-2" href="/jogar">Jogar</Link>
           {session ? (
             <>

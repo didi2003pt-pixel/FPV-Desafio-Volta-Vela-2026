@@ -11,7 +11,7 @@ export default async function StageDetailPage({ params }: { params: Promise<{ sl
   const { slug } = await params;
   const [stage, flags] = await Promise.all([
     getStageBySlug(slug),
-    getFeatureFlags("preclose_stats_enabled"),
+    getFeatureFlags("preclose_stats_enabled", "results_enabled", "rankings_enabled"),
   ]);
   if (!stage) notFound();
 
@@ -42,7 +42,11 @@ export default async function StageDetailPage({ params }: { params: Promise<{ sl
                 <div><dt className="text-slate-500">Previsões recebidas</dt><dd className="font-bold">{market.status === "OPEN" && !flags.preclose_stats_enabled ? "Oculto até ao fecho" : market._count.predictions}</dd></div>
                 <div><dt className="text-slate-500">Pergunta especial</dt><dd className="font-bold">{market.specialQuestion?.active ? "Ativa" : "Por configurar"}</dd></div>
               </dl>
-              <Link href={`/jogar/${stage.slug}/${market.class.code.toLowerCase()}`} className="mt-6 inline-flex rounded-xl bg-brand-red px-5 py-3 font-black text-white">Fazer previsão</Link>
+              <div className="mt-6 flex flex-wrap gap-3">
+                <Link href={`/jogar/${stage.slug}/${market.class.code.toLowerCase()}`} className="inline-flex rounded-xl bg-brand-red px-5 py-3 font-black text-white">Fazer previsão</Link>
+                {flags.results_enabled && stage.results.some((result) => result.classId === market.classId) ? <Link href={`/etapas/${stage.slug}/resultados/${market.class.code.toLowerCase()}`} className="inline-flex rounded-xl bg-brand-navy px-5 py-3 font-black text-white">Resultados</Link> : null}
+                {flags.rankings_enabled && stage.results.some((result) => result.classId === market.classId) ? <Link href={`/classificacoes/etapa/${stage.slug}/${market.class.code.toLowerCase()}`} className="inline-flex rounded-xl border border-brand-navy px-5 py-3 font-black text-brand-navy">Classificação</Link> : null}
+              </div>
             </Card>
           ))}
         </section>

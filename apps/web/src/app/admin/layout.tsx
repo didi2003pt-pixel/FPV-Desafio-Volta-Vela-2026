@@ -13,6 +13,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             <nav className="flex flex-wrap gap-1 text-sm font-bold">
               <Link href="/admin/etapas" className="rounded-lg px-3 py-2 hover:bg-white/10">Etapas</Link>
               <Link href="/admin/embarcacoes" className="rounded-lg px-3 py-2 hover:bg-white/10">Embarcações</Link>
+              <Link href="/admin/resultados" className="rounded-lg px-3 py-2 hover:bg-white/10">Resultados</Link>
+              <Link href="/admin/pontuacao" className="rounded-lg px-3 py-2 hover:bg-white/10">Pontuação</Link>
               <Link href="/admin/configuracao" className="rounded-lg px-3 py-2 hover:bg-white/10">Configuração</Link>
             </nav>
           </div>
