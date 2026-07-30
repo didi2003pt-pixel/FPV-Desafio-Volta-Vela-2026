@@ -5,6 +5,7 @@ COPY apps/web/package.json apps/web/package.json
 COPY packages/auth/package.json packages/auth/package.json
 COPY packages/config/package.json packages/config/package.json
 COPY packages/database/package.json packages/database/package.json
+COPY packages/game/package.json packages/game/package.json
 COPY packages/ui/package.json packages/ui/package.json
 COPY packages/testing/package.json packages/testing/package.json
 RUN npm install

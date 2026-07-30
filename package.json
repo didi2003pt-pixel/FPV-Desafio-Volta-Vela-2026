@@ -1,6 +1,6 @@
 {
   "name": "desafio-volta-vela-2026",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "engines": {
@@ -25,7 +25,9 @@
     "db:studio": "npm --workspace @desafio/database run db:studio",
     "infra:up": "docker compose up -d postgres redis minio mailpit",
     "infra:down": "docker compose down",
-    "verify:foundation": "node scripts/verify-foundation.mjs"
+    "verify:foundation": "node scripts/verify-foundation.mjs",
+    "verify:phase2": "node scripts/verify-phase2.mjs",
+    "markets:close": "npm --workspace @desafio/database run markets:close"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",
