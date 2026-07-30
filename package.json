@@ -1,6 +1,6 @@
 {
   "name": "desafio-volta-vela-2026",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "type": "module",
   "engines": {
@@ -30,7 +30,9 @@
     "markets:close": "npm --workspace @desafio/database run markets:close",
     "verify:phase3": "node scripts/verify-phase3.mjs",
     "results:recalculate": "npm --workspace @desafio/database run results:recalculate",
-    "test:phase3:runtime": "tsx scripts/runtime-phase3.ts"
+    "test:phase3:runtime": "tsx scripts/runtime-phase3.ts",
+    "verify:phase4": "node scripts/verify-phase4.mjs",
+    "test:phase4:runtime": "tsx scripts/runtime-phase4.ts"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",

@@ -1,4 +1,4 @@
-# Desafio Volta à Vela 2026 — Fase 3
+# Desafio Volta à Vela 2026 — Fase 4
 
 Implementação do domínio de **resultados, integração Sailti, pontuação auditável e classificações** sobre a fundação e o jogo das Fases 1 e 2.
 
@@ -124,3 +124,7 @@ npm run build
 ## Limitações antes de produção
 
 O ambiente onde o pacote foi gerado não conseguiu instalar as dependências npm, criar o cliente Prisma, executar PostgreSQL/Docker nem produzir o build Next.js. O repositório foi verificado estruturalmente e os módulos puros foram compilados/testados, mas a passagem por CI com Node 24, base de dados real e testes end-to-end continua obrigatória.
+
+
+## Fase 4
+Missões, prémios, notificações e cartões sociais estão implementados. Execute `npm run verify:phase4`.
