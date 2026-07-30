@@ -16,13 +16,15 @@ import { prisma } from "@desafio/database";
 import { createSession, revokeCurrentSession } from "@/lib/session";
 import { getRequestContext } from "@/lib/request-context";
 import { rateLimit } from "@/lib/redis";
+import { hashIdentifier } from "@desafio/operations";
+import { recordSecurityEvent } from "@/lib/security/security-event";
 import { sendVerificationEmail } from "@/lib/mail";
 
 export type FormState = { message?: string; fields?: Record<string, string[]> };
 
 export async function registerAction(_: FormState, formData: FormData): Promise<FormState> {
   const context = await getRequestContext();
-  const limiter = await rateLimit(`register:${context.ipAddress ?? "unknown"}`, 5, 3600);
+  const limiter = await rateLimit(`register:${context.ipHash ?? "unknown"}`, 5, 3600);
   if (!limiter.allowed) return { message: "Foram efetuadas demasiadas tentativas. Tenta mais tarde." };
 
   const parsed = registrationSchema.safeParse(Object.fromEntries(formData));
@@ -96,12 +98,32 @@ export async function loginAction(_: FormState, formData: FormData): Promise<For
   if (!parsed.success) return { message: "Email ou palavra-passe inválidos." };
 
   const email = normalizeEmail(parsed.data.email);
-  const limiter = await rateLimit(`login:${context.ipAddress ?? "unknown"}:${email}`, 10, 900);
+  const limiter = await rateLimit(`login:${context.ipHash ?? "unknown"}:${hashIdentifier(email, getEnv().IP_HASH_PEPPER)}`, 10, 900);
   if (!limiter.allowed) return { message: "Foram efetuadas demasiadas tentativas. Tenta mais tarde." };
 
   const user = await prisma.user.findUnique({ where: { email }, include: { roles: { include: { role: true } } } });
   if (!user?.passwordHash || !(await verifyPassword(user.passwordHash, parsed.data.password))) {
-    if (user) await prisma.user.update({ where: { id: user.id }, data: { failedLoginCount: { increment: 1 } } });
+    if (user) {
+      const nextFailures = user.failedLoginCount + 1;
+      const lock = nextFailures >= 5;
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          failedLoginCount: lock ? 0 : nextFailures,
+          lockedUntil: lock ? new Date(Date.now() + 15 * 60_000) : null,
+        },
+      });
+    }
+    await recordSecurityEvent({
+      severity: "WARNING",
+      eventType: "LOGIN_FAILED",
+      actorUserId: user?.id ?? null,
+      requestId: context.requestId,
+      ipHash: context.ipHash,
+      route: "/login",
+      method: "POST",
+      metadata: { knownAccount: Boolean(user), lockedAfterAttempt: Boolean(user && user.failedLoginCount + 1 >= 5) },
+    });
     return { message: "Email ou palavra-passe inválidos." };
   }
   if (user.lockedUntil && user.lockedUntil > new Date()) return { message: "A conta está temporariamente bloqueada." };

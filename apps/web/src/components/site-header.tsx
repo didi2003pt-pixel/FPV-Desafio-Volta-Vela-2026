@@ -23,6 +23,7 @@ export async function SiteHeader() {
           <Link className="rounded-lg px-3 py-2 hover:bg-white/10" href="/etapas">Etapas</Link>
           <Link className="rounded-lg px-3 py-2 hover:bg-white/10" href="/embarcacoes">Embarcações</Link>
           <Link className="rounded-lg px-3 py-2 hover:bg-white/10" href="/classificacoes">Classificações</Link>
+          <Link className="rounded-lg px-3 py-2 hover:bg-white/10" href="/missoes">Missões</Link>
           <Link className="rounded-lg bg-brand-red px-3 py-2" href="/jogar">Jogar</Link>
           {session ? (
             <>

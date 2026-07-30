@@ -16,6 +16,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               <Link href="/admin/resultados" className="rounded-lg px-3 py-2 hover:bg-white/10">Resultados</Link>
               <Link href="/admin/pontuacao" className="rounded-lg px-3 py-2 hover:bg-white/10">Pontuação</Link>
               <Link href="/admin/configuracao" className="rounded-lg px-3 py-2 hover:bg-white/10">Configuração</Link>
+              <Link href="/admin/privacidade" className="rounded-lg px-3 py-2 hover:bg-white/10">Privacidade</Link>
             </nav>
           </div>
           <form action={logoutAction}><button className="rounded-lg border border-white/30 px-3 py-2 text-sm font-bold">Sair · {user.profile?.nickname}</button></form>

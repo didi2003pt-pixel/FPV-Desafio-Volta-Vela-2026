@@ -26,7 +26,7 @@ export default async function ProfilePage() {
 
   return (
     <><SiteHeader /><main className="mx-auto max-w-6xl px-5 py-10 sm:px-8">
-      <h1 className="text-4xl font-black text-brand-navy">O teu perfil</h1>
+      <div className="flex flex-wrap items-center justify-between gap-4"><h1 className="text-4xl font-black text-brand-navy">O teu perfil</h1><Link className="rounded-xl border border-brand-blue px-4 py-2 font-black text-brand-blue" href="/perfil/privacidade">Privacidade e dados</Link></div>
       <section className="mt-7 grid gap-4 sm:grid-cols-2">
         {totals.map((total) => <Card key={total.id}><div className="flex justify-between gap-3"><div><p className="text-sm font-black text-brand-red">Classificação {total.class.code}</p><p className="mt-1 text-4xl font-black text-brand-navy">{total.points} pts</p></div><Badge tone="info">{total.stageCount} etapas</Badge></div><dl className="mt-4 grid grid-cols-2 gap-2 text-sm"><div><dt className="text-slate-500">Vencedores exatos</dt><dd className="font-black">{total.winnerExactCount}</dd></div><div><dt className="text-slate-500">Posições exatas</dt><dd className="font-black">{total.exactPodiumCount}</dd></div><div><dt className="text-slate-500">Surpresas</dt><dd className="font-black">{total.surpriseCorrectCount}</dd></div><div><dt className="text-slate-500">Perguntas</dt><dd className="font-black">{total.specialCorrectCount}</dd></div></dl></Card>)}
         {totals.length === 0 ? <Card className="sm:col-span-2"><p className="text-sm text-slate-500">Ainda não tens pontuação calculada.</p></Card> : null}
