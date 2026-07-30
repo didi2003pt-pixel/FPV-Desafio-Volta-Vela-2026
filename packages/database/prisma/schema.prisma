@@ -198,6 +198,65 @@ enum RankingStatus {
   SUPERSEDED
 }
 
+
+enum MissionType {
+  CONTENT_VIEW
+  SPONSOR_QUIZ
+  QR_CODE
+  MOMENT_VOTE
+  CITY_TRIVIA
+  LIVE_STREAM
+  PHOTO_UPLOAD
+  OFFICIAL_PAGE_VISIT
+}
+
+enum MissionValidationMode {
+  AUTOMATIC
+  SIGNED_QR
+  MANUAL
+  MODERATED
+}
+
+enum MissionCompletionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  REVOKED
+}
+
+enum PrizeStatus {
+  DRAFT
+  PUBLISHED
+  AWARDED
+  DELIVERED
+  CANCELLED
+}
+
+enum NotificationChannel {
+  IN_APP
+  EMAIL
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  READ
+  FAILED
+  CANCELLED
+}
+
+enum SocialCardFormat {
+  SQUARE
+  STORY
+}
+
+enum SocialDraftStatus {
+  DRAFT
+  APPROVED
+  EXPORTED
+  ARCHIVED
+}
+
 model User {
   id                  String    @id @default(uuid()) @db.Uuid
   email               String    @unique @db.VarChar(254)
@@ -223,6 +282,9 @@ model User {
   stageScores         UserStageScore[]
   totalScores         UserTotalScore[]
   auditLogs           AuditLog[] @relation("AuditActor")
+  missionCompletions  MissionCompletion[]
+  notifications       Notification[]
+  prizeAwards         PrizeAward[]
 
   @@map("users")
 }
@@ -967,10 +1029,137 @@ model Sponsor {
   logoKey   String?  @map("logo_key") @db.VarChar(500)
   active    Boolean  @default(true)
   stages    Stage[]
+  missions  Mission[]
+  prizes    Prize[]
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   @@map("sponsors")
+}
+
+
+model Mission {
+  id                     String                @id @default(uuid()) @db.Uuid
+  stageId                String?               @map("stage_id") @db.Uuid
+  sponsorId              String?               @map("sponsor_id") @db.Uuid
+  type                    MissionType
+  validationMode          MissionValidationMode @map("validation_mode")
+  title                   String                @db.VarChar(180)
+  slug                    String                @unique @db.VarChar(220)
+  description             String                @db.Text
+  instructions            String?               @db.Text
+  imageKey                 String?               @map("image_key") @db.VarChar(500)
+  points                   Int
+  startsAt                 DateTime              @map("starts_at") @db.Timestamptz(6)
+  endsAt                   DateTime              @map("ends_at") @db.Timestamptz(6)
+  dailyLimit               Int?                  @map("daily_limit")
+  totalLimit               Int?                  @map("total_limit")
+  active                   Boolean               @default(false)
+  configuration            Json?
+  stage                    Stage?                @relation(fields: [stageId], references: [id], onDelete: SetNull)
+  sponsor                  Sponsor?              @relation(fields: [sponsorId], references: [id], onDelete: SetNull)
+  completions              MissionCompletion[]
+  createdAt                DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                DateTime              @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([active, startsAt, endsAt])
+  @@index([stageId])
+  @@map("missions")
+}
+
+model MissionCompletion {
+  id              String                  @id @default(uuid()) @db.Uuid
+  missionId       String                  @map("mission_id") @db.Uuid
+  userId          String                  @map("user_id") @db.Uuid
+  status          MissionCompletionStatus @default(PENDING)
+  evidence        Json?
+  pointsAwarded   Int                     @default(0) @map("points_awarded")
+  completedAt     DateTime                @default(now()) @map("completed_at") @db.Timestamptz(6)
+  reviewedAt      DateTime?               @map("reviewed_at") @db.Timestamptz(6)
+  reviewedBy      String?                 @map("reviewed_by") @db.Uuid
+  rejectionReason String?                 @map("rejection_reason") @db.VarChar(500)
+  mission         Mission                 @relation(fields: [missionId], references: [id], onDelete: Cascade)
+  user            User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([missionId, userId])
+  @@index([status, completedAt])
+  @@map("mission_completions")
+}
+
+model Prize {
+  id                  String      @id @default(uuid()) @db.Uuid
+  sponsorId           String?     @map("sponsor_id") @db.Uuid
+  title               String      @db.VarChar(180)
+  slug                String      @unique @db.VarChar(220)
+  description         String      @db.Text
+  imageKey            String?     @map("image_key") @db.VarChar(500)
+  status              PrizeStatus @default(DRAFT)
+  rankingScope        RankingScope? @map("ranking_scope")
+  classCode           String?     @map("class_code") @db.VarChar(30)
+  quantity            Int         @default(1)
+  eligibility         Json?
+  regulations         String?     @db.Text
+  awardAt              DateTime?   @map("award_at") @db.Timestamptz(6)
+  sponsor              Sponsor?    @relation(fields: [sponsorId], references: [id], onDelete: SetNull)
+  awards               PrizeAward[]
+  createdAt            DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime    @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([status, awardAt])
+  @@map("prizes")
+}
+
+model PrizeAward {
+  id           String    @id @default(uuid()) @db.Uuid
+  prizeId      String    @map("prize_id") @db.Uuid
+  userId       String    @map("user_id") @db.Uuid
+  rankingRef   String?   @map("ranking_ref") @db.VarChar(250)
+  awardedAt    DateTime  @default(now()) @map("awarded_at") @db.Timestamptz(6)
+  deliveredAt  DateTime? @map("delivered_at") @db.Timestamptz(6)
+  deliveryNote String?   @map("delivery_note") @db.VarChar(500)
+  prize        Prize     @relation(fields: [prizeId], references: [id], onDelete: Cascade)
+  user         User      @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@unique([prizeId, userId])
+  @@map("prize_awards")
+}
+
+model Notification {
+  id          String              @id @default(uuid()) @db.Uuid
+  userId      String              @map("user_id") @db.Uuid
+  channel     NotificationChannel
+  type        String              @db.VarChar(100)
+  title       String              @db.VarChar(180)
+  body        String              @db.Text
+  payload     Json?
+  status      NotificationStatus  @default(PENDING)
+  scheduledAt DateTime?           @map("scheduled_at") @db.Timestamptz(6)
+  sentAt      DateTime?           @map("sent_at") @db.Timestamptz(6)
+  readAt      DateTime?           @map("read_at") @db.Timestamptz(6)
+  user        User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([userId, status, createdAt])
+  @@map("notifications")
+}
+
+model SocialContentDraft {
+  id            String            @id @default(uuid()) @db.Uuid
+  stageId       String?           @map("stage_id") @db.Uuid
+  format        SocialCardFormat
+  status        SocialDraftStatus @default(DRAFT)
+  headline      String            @db.VarChar(180)
+  body          String            @db.Text
+  statistics    Json
+  templateKey   String            @map("template_key") @db.VarChar(100)
+  assetKey      String?           @map("asset_key") @db.VarChar(500)
+  approvedBy    String?           @map("approved_by") @db.Uuid
+  approvedAt    DateTime?         @map("approved_at") @db.Timestamptz(6)
+  createdAt     DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime          @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([stageId, status])
+  @@map("social_content_drafts")
 }
 
 model AuditLog {
