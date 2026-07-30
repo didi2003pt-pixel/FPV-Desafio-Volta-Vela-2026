@@ -1,6 +1,6 @@
 {
   "name": "@desafio/database",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
   "exports": {
@@ -11,7 +11,9 @@
     "@node-rs/argon2": "^2.0.0",
     "@prisma/adapter-pg": "^7.4.2",
     "@prisma/client": "^7.4.2",
-    "pg": "^8.16.0"
+    "pg": "^8.16.0",
+    "@desafio/scoring": "0.3.0",
+    "@desafio/sailti": "0.3.0"
   },
   "devDependencies": {
     "@types/pg": "^8.15.0",
@@ -27,6 +29,7 @@
     "db:seed": "tsx prisma/seed.ts",
     "db:studio": "prisma --config prisma.config.ts studio",
     "typecheck": "tsc -p tsconfig.json",
-    "markets:close": "tsx src/maintenance/close-expired-markets.ts"
+    "markets:close": "tsx src/maintenance/close-expired-markets.ts",
+    "results:recalculate": "tsx src/results/recalculate-pending.ts"
   }
 }

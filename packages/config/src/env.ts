@@ -32,7 +32,12 @@ const schema = z.object({
   SAILTI_BASE_URL: z.string().url(),
   SAILTI_RACES_URL: z.string().url(),
   SAILTI_RESULTS_URL: z.string().url(),
+  SAILTI_PROVIDER: z.enum(["api", "file", "xrr", "html", "manual"]).default("file"),
+  SAILTI_XRR_ENABLED: booleanFromString.default("true"),
+  RESULT_IMPORT_MAX_BYTES: z.coerce.number().int().min(1_024).max(50_000_000).default(5_242_880),
+  RESULT_RECALCULATION_MAX_RETRIES: z.coerce.number().int().min(1).max(10).default(5),
   CRON_SECRET: z.string().min(24).optional(),
+  RESULTS_CRON_SECRET: z.string().min(24).optional(),
 });
 
 export type AppEnv = z.infer<typeof schema>;

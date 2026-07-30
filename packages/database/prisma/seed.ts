@@ -290,12 +290,40 @@ async function main() {
     }
   }
 
+  const scoringRuleSet = await prisma.scoringRuleSet.upsert({
+    where: { code_version: { code: "MVP_2026", version: 1 } },
+    update: { name: "Pontuação MVP 2026", active: true },
+    create: { code: "MVP_2026", version: 1, name: "Pontuação MVP 2026", active: true },
+  });
+  const scoringRules = [
+    ["WINNER_EXACT", 100],
+    ["PODIUM_EXACT_SECOND", 75],
+    ["PODIUM_EXACT_THIRD", 75],
+    ["PODIUM_WRONG_POSITION", 40],
+    ["SURPRISE_TOP_FIVE", 60],
+    ["SPECIAL_QUESTION_CORRECT", 50],
+    ["ALL_ELIGIBLE_STAGES_BONUS", 100],
+  ] as const;
+  for (const [code, points] of scoringRules) {
+    await prisma.scoringRule.upsert({
+      where: { ruleSetId_code: { ruleSetId: scoringRuleSet.id, code } },
+      update: { points, active: true },
+      create: { ruleSetId: scoringRuleSet.id, code, points, active: true },
+    });
+  }
+  await prisma.predictionMarket.updateMany({
+    where: { scoringRuleSetId: null },
+    data: { scoringRuleSetId: scoringRuleSet.id },
+  });
+
   const settings = [
     ["timezone", "Europe/Lisbon", "Fuso horário de apresentação"],
     ["official_wording_enabled", false, "Controla a utilização da expressão jogo oficial"],
     ["game_launch_stage", { stage: null }, "Etapa a partir da qual o jogo aceita previsões"],
     ["audit_source_version", "1.2.0", "Versão da auditoria utilizada no seed"],
     ["phase2_schema_version", "1.0.0", "Versão do domínio de previsões"],
+    ["phase3_schema_version", "1.0.0", "Versão do domínio de resultados, pontuação e rankings"],
+    ["community_ranking_methodology", { method: "average_top_10", minimum: 1 }, "Método das classificações por comunidade"],
   ] as const;
   for (const [key, value, description] of settings) {
     await prisma.systemSetting.upsert({
@@ -312,6 +340,9 @@ async function main() {
     ["profiles_enabled", true],
     ["preclose_stats_enabled", false],
     ["sailti_sync_enabled", false],
+    ["result_imports_enabled", false],
+    ["results_enabled", false],
+    ["rankings_enabled", false],
     ["missions_enabled", false],
   ] as const;
   for (const [key, enabled] of flags) {
@@ -351,7 +382,7 @@ async function main() {
     });
   }
 
-  console.log(`Seed concluído: ${boats.length} embarcações, ${stages.length} etapas e ${stages.length * 2} mercados em rascunho.`);
+  console.log(`Seed concluído: ${boats.length} embarcações, ${stages.length} etapas, ${stages.length * 2} mercados e regras de pontuação MVP 2026.`);
 }
 
 main()
