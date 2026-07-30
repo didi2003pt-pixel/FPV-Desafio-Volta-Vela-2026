@@ -1,0 +1,77 @@
+{
+  "filename": "Controlo - Volta a Portugal 2026.xlsx",
+  "sha256": "2bffc8fb7360d87b27bdae1f0459b1b3c6c19b7460652dbd8ca056deac21a636",
+  "sheet_count": 10,
+  "formula_count": 0,
+  "contains_boat_registry": true,
+  "critical_finding": "A tabela de embarcações não estava acessível no workbook inicialmente auditado, mas foi posteriormente fornecida em duas capturas do Excel e confirmada pelo utilizador. Os 30 números de barco foram atualizados como oficiais.",
+  "sheets": [
+    {
+      "name": "Controlo",
+      "used_range": "A1:F105",
+      "purpose": "Checklist geral por categoria, estado e responsável."
+    },
+    {
+      "name": "Etapa 1",
+      "used_range": "A1:K26",
+      "purpose": "Calendário e checklist operacional da Etapa 1."
+    },
+    {
+      "name": "Etapa 2",
+      "used_range": "A1:J21",
+      "purpose": "Calendário e checklist operacional da Etapa 2."
+    },
+    {
+      "name": "Etapa 3",
+      "used_range": "A1:K25",
+      "purpose": "Calendário e checklist operacional da Etapa 3."
+    },
+    {
+      "name": "Etapa 4",
+      "used_range": "A1:J21",
+      "purpose": "Calendário e checklist operacional da Etapa 4."
+    },
+    {
+      "name": "Etapa 5",
+      "used_range": "A1:K27",
+      "purpose": "Calendário e checklist operacional da Etapa 5."
+    },
+    {
+      "name": "Etapa 6",
+      "used_range": "A1:K23",
+      "purpose": "Calendário e checklist operacional da Etapa 6."
+    },
+    {
+      "name": "Etapa 7",
+      "used_range": "A1:J23",
+      "purpose": "Calendário e checklist operacional da Etapa 7."
+    },
+    {
+      "name": "Etapa 8",
+      "used_range": "A1:K29",
+      "purpose": "Calendário e checklist operacional da Etapa 8."
+    },
+    {
+      "name": "Staff",
+      "used_range": "A1:C19",
+      "purpose": "Lista interna de elementos de staff."
+    }
+  ],
+  "sensitive_content_examples": [
+    "Nomes de staff e responsáveis.",
+    "Número de telefone operacional numa checklist de etapa.",
+    "Notas internas de organização, convidados e autoridades."
+  ],
+  "audit_version": "1.1.0",
+  "updated_at": "2026-07-29T16:48:00+01:00",
+  "boat_registry_availability": "confirmed_via_excel_screenshots",
+  "boat_registry_source_files": [
+    "Captura de ecrã 2026-07-29 164622.png",
+    "Captura de ecrã 2026-07-29 164637.png"
+  ],
+  "boat_registry_source_sha256": [
+    "6b2563bac5630361400e27af865d815aca57ed6a14fc5a047b0150669e55b989",
+    "40b2df1ce315ce6d3a1e7a8f9f97ceed64d577a2c9945db8b37c725ee8f24e5e"
+  ],
+  "source_limitation": "As linhas continuam a não estar disponíveis como células no XLSX recebido. As capturas são a evidência operacional atual; recomenda-se obter a folha original para automatizar importações futuras."
+}

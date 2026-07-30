@@ -1,0 +1,257 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/schemas/desafio-volta-boat-audit-v1.json",
+  "title": "Desafio Volta à Vela - Boat audit record",
+  "type": "object",
+  "required": [
+    "registration_id",
+    "boat_number",
+    "public_name",
+    "class",
+    "sail",
+    "certificate",
+    "participation",
+    "readiness_status",
+    "boat_number_source_files",
+    "boat_number_source_sha256"
+  ],
+  "properties": {
+    "registration_id": {
+      "type": "string"
+    },
+    "boat_number": {
+      "type": "string"
+    },
+    "boat_number_source_required": {
+      "type": "string"
+    },
+    "boat_number_status": {
+      "const": "official_confirmed_from_excel_screenshots"
+    },
+    "boat_number_candidate_from_registration_control_pdf": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "public_name": {
+      "type": "string"
+    },
+    "technical_name": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "aliases": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "class": {
+      "enum": [
+        "ANC",
+        "ORC"
+      ]
+    },
+    "group": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "registration_sail_candidate_non_authoritative": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "sail": {
+      "type": "object",
+      "required": [
+        "country_code",
+        "number",
+        "suffix",
+        "display",
+        "source_policy"
+      ],
+      "properties": {
+        "country_code": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "number": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "suffix": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "display": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "source_policy": {
+          "type": "string"
+        }
+      }
+    },
+    "certificate": {
+      "type": "object",
+      "required": [
+        "type",
+        "source_files",
+        "status"
+      ],
+      "properties": {
+        "type": {
+          "enum": [
+            "ANC",
+            "ORC"
+          ]
+        },
+        "source_files": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "source_format": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "source_sha256": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "reference": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "model": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "rating_type": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "rating_value": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "issued_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date"
+        },
+        "valid_until": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date"
+        },
+        "status": {
+          "type": "string"
+        }
+      }
+    },
+    "participation": {
+      "type": "object",
+      "required": [
+        "stage_1",
+        "stage_2",
+        "stage_3",
+        "stage_4",
+        "stage_5",
+        "stage_6",
+        "stage_7",
+        "stage_8"
+      ],
+      "properties": {
+        "stage_1": {
+          "type": "boolean"
+        },
+        "stage_2": {
+          "type": "boolean"
+        },
+        "stage_3": {
+          "type": "boolean"
+        },
+        "stage_4": {
+          "type": "boolean"
+        },
+        "stage_5": {
+          "type": "boolean"
+        },
+        "stage_6": {
+          "type": "boolean"
+        },
+        "stage_7": {
+          "type": "boolean"
+        },
+        "stage_8": {
+          "type": "boolean"
+        }
+      }
+    },
+    "conflicts": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "readiness_status": {
+      "type": "string"
+    },
+    "human_validation_required": {
+      "type": "boolean"
+    },
+    "human_validation_reasons": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "boat_number_source_files": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 2
+    },
+    "boat_number_source_sha256": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-f0-9]{64}$"
+      },
+      "minItems": 2
+    }
+  }
+}
